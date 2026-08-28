@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import {
@@ -11,47 +11,42 @@ import {
   startTask,
 } from "@/lib/watch.functions";
 import { getMyAccount } from "@/lib/account.functions";
-import { useHydrated } from "@/hooks/use-hydrated";
 
 export function useAccount() {
-  const hydrated = useHydrated();
   const fn = useServerFn(getMyAccount);
   return useQuery({
     queryKey: ["we", "account"],
-    enabled: hydrated,
-    staleTime: 30_000,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
     queryFn: () => fn(),
   });
 }
 
 export function useFeed() {
-  const hydrated = useHydrated();
   const fn = useServerFn(getFeed);
   return useQuery({
     queryKey: ["we", "feed"],
-    enabled: hydrated,
-    staleTime: 15_000,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
     queryFn: () => fn(),
   });
 }
 
 export function useWalletOverview() {
-  const hydrated = useHydrated();
   const fn = useServerFn(getWalletOverview);
   return useQuery({
     queryKey: ["we", "wallet"],
-    enabled: hydrated,
-    staleTime: 10_000,
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
     queryFn: () => fn(),
   });
 }
 
 export function useTaskDetail(taskId: string) {
-  const hydrated = useHydrated();
   const fn = useServerFn(getTaskDetail);
   return useQuery({
     queryKey: ["we", "task", taskId],
-    enabled: hydrated,
+    staleTime: 30_000,
     queryFn: () => fn({ data: { taskId } }),
   });
 }
@@ -75,12 +70,11 @@ export function useCompleteTask() {
 }
 
 export function useWithdrawals() {
-  const hydrated = useHydrated();
   const fn = useServerFn(getWithdrawals);
   return useQuery({
     queryKey: ["we", "withdrawals"],
-    enabled: hydrated,
-    staleTime: 10_000,
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
     queryFn: () => fn(),
   });
 }
