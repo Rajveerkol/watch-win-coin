@@ -41,7 +41,7 @@ export function AppShell({
           <nav className="fixed inset-x-0 bottom-0 z-30 mx-auto w-full max-w-[440px] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
             <div className="flex items-center justify-between gap-1 rounded-3xl p-1.5 backdrop-blur-xl surface-card">
               {NAV.map(({ to, label, icon: Icon }) => {
-                const active = to === "/" ? pathname === "/" : pathname.startsWith(to);
+                const active = pathname === to || pathname.startsWith(`${to}/`);
                 return (
                   <Link
                     key={to}
