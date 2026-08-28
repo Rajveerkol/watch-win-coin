@@ -287,7 +287,7 @@ function TaskScreen() {
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               loading="lazy"
-              className="size-full border-0"
+              className="size-full border-0 pointer-events-none"
             />
           )}
         </div>
