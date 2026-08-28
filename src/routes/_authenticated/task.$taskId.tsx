@@ -55,37 +55,67 @@ function TaskScreen() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [checkpointDue, setCheckpointDue] = useState(false);
-  const [checkpointDone, setCheckpointDone] = useState(false);
+  const [checkpointLeft, setCheckpointLeft] = useState(0);
+  const [restarts, setRestarts] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reward, setReward] = useState<{ coins: number; balance: number } | null>(null);
-  const checkpointAt = useRef(0);
+
+  const elapsedRef = useRef(0);
+  const checkpointRef = useRef(0);
+  const nextCheckpointRef = useRef(0);
+  const autoStarted = useRef(false);
 
   const task = data?.task ?? null;
   const duration = task?.durationSeconds ?? 60;
   const remainingSecs = Math.max(0, duration - elapsed);
   const timeSatisfied = elapsed >= duration;
-  const requirementsMet = timeSatisfied && checkpointDone;
+  const requirementsMet = timeSatisfied && checkpointLeft === 0;
 
-  // The requirement is an on-site attention task: the timer only advances while
-  // this tab is visible, and a mid-task confirmation tap must be acknowledged.
+  const scheduleCheckpoint = useCallback(() => {
+    nextCheckpointRef.current =
+      elapsedRef.current + 10 + Math.floor(Math.random() * Math.max(1, Math.floor(duration / 4)));
+  }, [duration]);
+
+  const confirmCheckpoint = useCallback(() => {
+    checkpointRef.current = 0;
+    setCheckpointLeft(0);
+    scheduleCheckpoint();
+  }, [scheduleCheckpoint]);
+
+  // On-site attention task: the timer only advances while this tab is visible, and
+  // a 3-second confirmation prompt appears at random — miss it and the timer restarts.
   useEffect(() => {
     if (phase !== "active") return;
     const onVisibility = () => setPaused(document.visibilityState !== "visible");
     document.addEventListener("visibilitychange", onVisibility);
     const id = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      setElapsed((e) => {
-        const next = e + 1;
-        if (!checkpointDone && next >= checkpointAt.current) setCheckpointDue(true);
-        return next;
-      });
+
+      if (checkpointRef.current > 0) {
+        checkpointRef.current -= 1;
+        setCheckpointLeft(checkpointRef.current);
+        if (checkpointRef.current === 0) {
+          // Missed the confirmation — restart the timer.
+          elapsedRef.current = 0;
+          setElapsed(0);
+          setRestarts((r) => r + 1);
+          scheduleCheckpoint();
+        }
+        return;
+      }
+
+      elapsedRef.current += 1;
+      setElapsed(elapsedRef.current);
+      if (elapsedRef.current < duration && elapsedRef.current >= nextCheckpointRef.current) {
+        checkpointRef.current = 3;
+        setCheckpointLeft(3);
+      }
     }, 1000);
     return () => {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [phase, checkpointDone]);
+  }, [phase, duration, scheduleCheckpoint]);
 
   useEffect(() => {
     if (phase === "active") {
@@ -108,13 +138,24 @@ function TaskScreen() {
       setErrorMessage(res.error);
       return;
     }
-    checkpointAt.current = Math.max(5, Math.floor(duration * 0.55));
+    elapsedRef.current = 0;
+    checkpointRef.current = 0;
     setSessionId(res.sessionId);
     setElapsed(0);
-    setCheckpointDone(false);
-    setCheckpointDue(false);
+    setCheckpointLeft(0);
+    setRestarts(0);
+    scheduleCheckpoint();
     setPhase("active");
-  }, [duration, start, taskId]);
+  }, [scheduleCheckpoint, start, taskId]);
+
+  // Auto-start: the task begins playing as soon as the screen opens.
+  useEffect(() => {
+    if (autoStarted.current) return;
+    if (phase !== "details" || !task) return;
+    if (task.completedByMe || data?.activeOtherTaskId) return;
+    autoStarted.current = true;
+    void onStart();
+  }, [data?.activeOtherTaskId, onStart, phase, task]);
 
   const onClaim = useCallback(async () => {
     if (!sessionId) return;
@@ -134,6 +175,7 @@ function TaskScreen() {
     () => Math.min(100, Math.round((elapsed / duration) * 100)),
     [duration, elapsed],
   );
+
 
   if (isPending) {
     return (
@@ -241,7 +283,7 @@ function TaskScreen() {
           ) : (
             <iframe
               title={task.title}
-              src={`https://www.youtube-nocookie.com/embed/${task.youtubeId}?rel=0&playsinline=1&modestbranding=1`}
+              src={`https://www.youtube-nocookie.com/embed/${task.youtubeId}?rel=0&playsinline=1&modestbranding=1&autoplay=1&mute=1`}
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               loading="lazy"
@@ -340,20 +382,34 @@ function TaskScreen() {
                   ? "Time requirement complete."
                   : "Keep this screen open to complete the requirement."}
             </p>
+            {restarts > 0 && !timeSatisfied && (
+              <p className="mt-2 text-[11px] font-semibold text-destructive">
+                Checkpoint missed — timer restarted ({restarts}×).
+              </p>
+            )}
+
           </section>
 
-          {checkpointDue && !checkpointDone && (
-            <button
-              onClick={() => {
-                setCheckpointDone(true);
-                setCheckpointDue(false);
-              }}
-              className="press mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-accent/12 py-3.5 text-sm font-bold text-accent"
-            >
-              <Hand className="size-4" />
-              Tap to confirm you're still here
-            </button>
+          {checkpointLeft > 0 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
+              <div className="animate-pop w-full max-w-xs rounded-3xl p-5 text-center surface-card">
+                <span className="mx-auto flex size-14 items-center justify-center rounded-2xl brand-soft">
+                  <Hand className="size-6 text-primary" />
+                </span>
+                <p className="mt-3 text-sm font-bold">Confirm if you're still here</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Tap within {checkpointLeft}s or the timer restarts.
+                </p>
+                <button
+                  onClick={confirmCheckpoint}
+                  className="press mt-4 w-full rounded-2xl py-3.5 text-sm font-bold text-primary-foreground brand-gradient"
+                >
+                  I'm still here ({checkpointLeft})
+                </button>
+              </div>
+            </div>
           )}
+
 
           {errorMessage && <ErrorNote message={errorMessage} />}
 
@@ -378,7 +434,7 @@ function TaskScreen() {
             ) : (
               <>
                 <Lock className="size-4" />
-                {checkpointDone || !checkpointDue ? "Requirement in progress" : "Confirm checkpoint"}
+                {checkpointLeft > 0 ? "Confirm checkpoint" : "Requirement in progress"}
               </>
             )}
           </button>
