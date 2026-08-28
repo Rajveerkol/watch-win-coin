@@ -283,7 +283,7 @@ function TaskScreen() {
           ) : (
             <iframe
               title={task.title}
-              src={`https://www.youtube-nocookie.com/embed/${task.youtubeId}?rel=0&playsinline=1&modestbranding=1`}
+              src={`https://www.youtube-nocookie.com/embed/${task.youtubeId}?rel=0&playsinline=1&modestbranding=1&autoplay=1&mute=1`}
               allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
               loading="lazy"
