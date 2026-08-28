@@ -384,18 +384,26 @@ function TaskScreen() {
             </p>
           </section>
 
-          {checkpointDue && !checkpointDone && (
-            <button
-              onClick={() => {
-                setCheckpointDone(true);
-                setCheckpointDue(false);
-              }}
-              className="press mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-accent/40 bg-accent/12 py-3.5 text-sm font-bold text-accent"
-            >
-              <Hand className="size-4" />
-              Tap to confirm you're still here
-            </button>
+          {checkpointLeft > 0 && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
+              <div className="animate-pop w-full max-w-xs rounded-3xl p-5 text-center surface-card">
+                <span className="mx-auto flex size-14 items-center justify-center rounded-2xl brand-soft">
+                  <Hand className="size-6 text-primary" />
+                </span>
+                <p className="mt-3 text-sm font-bold">Confirm if you're still here</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Tap within {checkpointLeft}s or the timer restarts.
+                </p>
+                <button
+                  onClick={confirmCheckpoint}
+                  className="press mt-4 w-full rounded-2xl py-3.5 text-sm font-bold text-primary-foreground brand-gradient"
+                >
+                  I'm still here ({checkpointLeft})
+                </button>
+              </div>
+            </div>
           )}
+
 
           {errorMessage && <ErrorNote message={errorMessage} />}
 
