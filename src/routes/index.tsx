@@ -105,7 +105,7 @@ function LandingScreen() {
   };
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden bg-background">
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-background">
       <div
         aria-hidden
         className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[130%] -translate-x-1/2 rounded-[50%] opacity-25 blur-3xl brand-gradient"
