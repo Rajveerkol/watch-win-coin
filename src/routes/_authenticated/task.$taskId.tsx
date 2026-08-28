@@ -428,7 +428,7 @@ function TaskScreen() {
             ) : (
               <>
                 <Lock className="size-4" />
-                {checkpointDone || !checkpointDue ? "Requirement in progress" : "Confirm checkpoint"}
+                {checkpointLeft > 0 ? "Confirm checkpoint" : "Requirement in progress"}
               </>
             )}
           </button>
