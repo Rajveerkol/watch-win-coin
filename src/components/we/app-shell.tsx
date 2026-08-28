@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { to: "/", label: "Home", icon: Home },
+  { to: "/home", label: "Home", icon: Home },
   { to: "/tasks", label: "Tasks", icon: ListVideo },
   { to: "/wallet", label: "Wallet", icon: Wallet },
   { to: "/completed", label: "Done", icon: CircleCheckBig },
