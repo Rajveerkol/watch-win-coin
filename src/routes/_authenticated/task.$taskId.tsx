@@ -55,37 +55,67 @@ function TaskScreen() {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [checkpointDue, setCheckpointDue] = useState(false);
-  const [checkpointDone, setCheckpointDone] = useState(false);
+  const [checkpointLeft, setCheckpointLeft] = useState(0);
+  const [restarts, setRestarts] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [reward, setReward] = useState<{ coins: number; balance: number } | null>(null);
-  const checkpointAt = useRef(0);
+
+  const elapsedRef = useRef(0);
+  const checkpointRef = useRef(0);
+  const nextCheckpointRef = useRef(0);
+  const autoStarted = useRef(false);
 
   const task = data?.task ?? null;
   const duration = task?.durationSeconds ?? 60;
   const remainingSecs = Math.max(0, duration - elapsed);
   const timeSatisfied = elapsed >= duration;
-  const requirementsMet = timeSatisfied && checkpointDone;
+  const requirementsMet = timeSatisfied && checkpointLeft === 0;
 
-  // The requirement is an on-site attention task: the timer only advances while
-  // this tab is visible, and a mid-task confirmation tap must be acknowledged.
+  const scheduleCheckpoint = useCallback(() => {
+    nextCheckpointRef.current =
+      elapsedRef.current + 10 + Math.floor(Math.random() * Math.max(1, Math.floor(duration / 4)));
+  }, [duration]);
+
+  const confirmCheckpoint = useCallback(() => {
+    checkpointRef.current = 0;
+    setCheckpointLeft(0);
+    scheduleCheckpoint();
+  }, [scheduleCheckpoint]);
+
+  // On-site attention task: the timer only advances while this tab is visible, and
+  // a 3-second confirmation prompt appears at random — miss it and the timer restarts.
   useEffect(() => {
     if (phase !== "active") return;
     const onVisibility = () => setPaused(document.visibilityState !== "visible");
     document.addEventListener("visibilitychange", onVisibility);
     const id = window.setInterval(() => {
       if (document.visibilityState !== "visible") return;
-      setElapsed((e) => {
-        const next = e + 1;
-        if (!checkpointDone && next >= checkpointAt.current) setCheckpointDue(true);
-        return next;
-      });
+
+      if (checkpointRef.current > 0) {
+        checkpointRef.current -= 1;
+        setCheckpointLeft(checkpointRef.current);
+        if (checkpointRef.current === 0) {
+          // Missed the confirmation — restart the timer.
+          elapsedRef.current = 0;
+          setElapsed(0);
+          setRestarts((r) => r + 1);
+          scheduleCheckpoint();
+        }
+        return;
+      }
+
+      elapsedRef.current += 1;
+      setElapsed(elapsedRef.current);
+      if (elapsedRef.current < duration && elapsedRef.current >= nextCheckpointRef.current) {
+        checkpointRef.current = 3;
+        setCheckpointLeft(3);
+      }
     }, 1000);
     return () => {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [phase, checkpointDone]);
+  }, [phase, duration, scheduleCheckpoint]);
 
   useEffect(() => {
     if (phase === "active") {
@@ -108,13 +138,24 @@ function TaskScreen() {
       setErrorMessage(res.error);
       return;
     }
-    checkpointAt.current = Math.max(5, Math.floor(duration * 0.55));
+    elapsedRef.current = 0;
+    checkpointRef.current = 0;
     setSessionId(res.sessionId);
     setElapsed(0);
-    setCheckpointDone(false);
-    setCheckpointDue(false);
+    setCheckpointLeft(0);
+    setRestarts(0);
+    scheduleCheckpoint();
     setPhase("active");
-  }, [duration, start, taskId]);
+  }, [scheduleCheckpoint, start, taskId]);
+
+  // Auto-start: the task begins playing as soon as the screen opens.
+  useEffect(() => {
+    if (autoStarted.current) return;
+    if (phase !== "details" || !task) return;
+    if (task.completedByMe || data?.activeOtherTaskId) return;
+    autoStarted.current = true;
+    void onStart();
+  }, [data?.activeOtherTaskId, onStart, phase, task]);
 
   const onClaim = useCallback(async () => {
     if (!sessionId) return;
@@ -134,6 +175,7 @@ function TaskScreen() {
     () => Math.min(100, Math.round((elapsed / duration) * 100)),
     [duration, elapsed],
   );
+
 
   if (isPending) {
     return (
