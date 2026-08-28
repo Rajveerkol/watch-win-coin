@@ -11,6 +11,7 @@ const credentials = z.object({
     .transform((v) => v.toLowerCase())
     .refine((v) => USERNAME_RULE.test(v), "Invalid user ID"),
   password: z.string().min(8).max(72),
+  deviceId: z.string().trim().min(4).max(120).optional(),
 });
 
 /** Turns a user ID into the internal login address used by the auth system. */
@@ -22,6 +23,20 @@ export const signUpAccount = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => credentials.parse(d))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    if (data.deviceId) {
+      const { data: deviceOwner } = await supabaseAdmin
+        .from("device_accounts")
+        .select("user_id")
+        .eq("device_id", data.deviceId)
+        .maybeSingle();
+      if (deviceOwner) {
+        return {
+          ok: false as const,
+          error: "This device already has an account. Only one account is allowed per device.",
+        };
+      }
+    }
 
     const { data: existing } = await supabaseAdmin
       .from("profiles")
@@ -48,6 +63,20 @@ export const signUpAccount = createServerFn({ method: "POST" })
     if (profileError) {
       await supabaseAdmin.auth.admin.deleteUser(created.user.id);
       return { ok: false as const, error: "That user ID is already taken. Try another one." };
+    }
+
+    if (data.deviceId) {
+      const { error: deviceError } = await supabaseAdmin
+        .from("device_accounts")
+        .insert({ device_id: data.deviceId, user_id: created.user.id });
+      if (deviceError) {
+        await supabaseAdmin.from("profiles").delete().eq("id", created.user.id);
+        await supabaseAdmin.auth.admin.deleteUser(created.user.id);
+        return {
+          ok: false as const,
+          error: "This device already has an account. Only one account is allowed per device.",
+        };
+      }
     }
 
     return { ok: true as const, username: data.username };
