@@ -382,6 +382,12 @@ function TaskScreen() {
                   ? "Time requirement complete."
                   : "Keep this screen open to complete the requirement."}
             </p>
+            {restarts > 0 && !timeSatisfied && (
+              <p className="mt-2 text-[11px] font-semibold text-destructive">
+                Checkpoint missed — timer restarted ({restarts}×).
+              </p>
+            )}
+
           </section>
 
           {checkpointLeft > 0 && (
