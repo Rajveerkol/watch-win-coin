@@ -15,6 +15,7 @@ import {
 
 import { supabase } from "@/integrations/supabase/client";
 import { signUpAccount, USERNAME_RULE, usernameToEmail } from "@/lib/account.functions";
+import { getDeviceId } from "@/lib/device";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -77,7 +78,7 @@ function LandingScreen() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        const res = await signUp({ data: { username: id, password } });
+        const res = await signUp({ data: { username: id, password, deviceId: getDeviceId() } });
         if (!res.ok) {
           setError(res.error);
           return;
