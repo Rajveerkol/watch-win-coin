@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Sparkles,
   Users,
+  Volume2,
 } from "lucide-react";
 
 import { AppShell, EmptyState } from "@/components/we/app-shell";
@@ -64,6 +65,46 @@ function TaskScreen() {
   const checkpointRef = useRef(0);
   const nextCheckpointRef = useRef(0);
   const autoStarted = useRef(false);
+  const playerRef = useRef<HTMLIFrameElement | null>(null);
+  const [soundOn, setSoundOn] = useState(false);
+
+  const sendToPlayer = useCallback((func: string, args: unknown[] = []) => {
+    playerRef.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func, args }),
+      "*",
+    );
+  }, []);
+
+  // Autoplay only works muted, so we unmute the moment the browser allows it:
+  // immediately if permitted, otherwise on the user's first interaction.
+  const enableSound = useCallback(() => {
+    sendToPlayer("unMute");
+    sendToPlayer("setVolume", [100]);
+    sendToPlayer("playVideo");
+    setSoundOn(true);
+  }, [sendToPlayer]);
+
+  useEffect(() => {
+    if (phase !== "active") return;
+    const tries = [400, 1200, 2500, 4000];
+    const timers = tries.map((t) =>
+      window.setTimeout(() => {
+        sendToPlayer("unMute");
+        sendToPlayer("setVolume", [100]);
+        sendToPlayer("playVideo");
+      }, t),
+    );
+    const onGesture = () => enableSound();
+    window.addEventListener("pointerdown", onGesture);
+    window.addEventListener("keydown", onGesture);
+    window.addEventListener("touchstart", onGesture);
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      window.removeEventListener("pointerdown", onGesture);
+      window.removeEventListener("keydown", onGesture);
+      window.removeEventListener("touchstart", onGesture);
+    };
+  }, [enableSound, phase, sendToPlayer]);
 
   const task = data?.task ?? null;
   const duration = task?.durationSeconds ?? 60;
@@ -281,14 +322,25 @@ function TaskScreen() {
               className="size-full object-cover"
             />
           ) : (
-            <iframe
-              title={task.title}
-              src={`https://www.youtube-nocookie.com/embed/${task.youtubeId}?rel=0&playsinline=1&modestbranding=1&autoplay=1&mute=1`}
-              allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-              loading="lazy"
-              className="size-full border-0 pointer-events-none"
-            />
+            <>
+              <iframe
+                ref={playerRef}
+                title={task.title}
+                src={`https://www.youtube-nocookie.com/embed/${task.youtubeId}?rel=0&playsinline=1&modestbranding=1&autoplay=1&mute=1&enablejsapi=1&controls=0`}
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+                className="size-full border-0 pointer-events-none"
+              />
+              {!soundOn && (
+                <button
+                  type="button"
+                  onClick={enableSound}
+                  className="press absolute inset-x-0 bottom-0 flex items-center justify-center gap-2 bg-black/55 py-2.5 text-xs font-bold text-white"
+                >
+                  <Volume2 className="size-4" /> Tap anywhere to turn sound on
+                </button>
+              )}
+            </>
           )}
         </div>
         <div className="p-4">
