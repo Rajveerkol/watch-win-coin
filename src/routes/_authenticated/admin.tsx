@@ -102,6 +102,9 @@ type FormState = {
   endAt: string;
 };
 
+const TASK_FILTERS = ["All", "Active", "Paused", "Quick", "High reward"] as const;
+type TaskFilter = (typeof TASK_FILTERS)[number];
+
 const EMPTY_FORM: FormState = {
   title: "",
   youtubeUrl: "",
