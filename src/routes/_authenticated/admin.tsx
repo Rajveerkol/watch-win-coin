@@ -129,6 +129,16 @@ function AdminConsole() {
 
   const [form, setForm] = useState<FormState | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("All");
+
+  const visibleTasks = ((tasks.data ?? []) as TaskRow[]).filter((t) => {
+    if (taskFilter === "Active") return t.status === "active";
+    if (taskFilter === "Paused") return t.status === "paused";
+    if (taskFilter === "Quick") return t.duration_seconds <= 60;
+    if (taskFilter === "High reward") return Number(t.reward_coins ?? 0) >= 5000;
+    return true;
+  });
+
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin"] });
 
