@@ -166,11 +166,22 @@ function TaskScreen() {
         if (leave) navigate({ to: "/tasks" });
         else window.history.pushState({ weTask: true }, "");
       };
+      // Reloading loses the watched time, so the browser asks for confirmation first.
+      const onBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = "";
+        return "";
+      };
       window.addEventListener("popstate", onPop);
-      return () => window.removeEventListener("popstate", onPop);
+      window.addEventListener("beforeunload", onBeforeUnload);
+      return () => {
+        window.removeEventListener("popstate", onPop);
+        window.removeEventListener("beforeunload", onBeforeUnload);
+      };
     }
     return undefined;
   }, [phase, navigate]);
+
 
   const onStart = useCallback(async () => {
     setErrorMessage(null);
