@@ -74,6 +74,25 @@ export const adminSaveTask = createServerFn({ method: "POST" })
       end_at: data.endAt,
     };
     if (data.id) {
+      const { data: existing } = await m.supabaseAdmin
+        .from("tasks")
+        .select("youtube_id")
+        .eq("id", data.id)
+        .maybeSingle();
+
+      // Changing the video makes it a different task: the old one is archived and a
+      // brand new task is created so completion history stays tied to the old video.
+      if (existing && existing.youtube_id !== data.youtubeId) {
+        const { data: created, error } = await m.supabaseAdmin
+          .from("tasks")
+          .insert(row)
+          .select("id")
+          .single();
+        if (error) return { ok: false as const, error: error.message };
+        await m.supabaseAdmin.from("tasks").update({ status: "expired" }).eq("id", data.id);
+        return { ok: true as const, id: created.id, replaced: true as const };
+      }
+
       const { error } = await m.supabaseAdmin.from("tasks").update(row).eq("id", data.id);
       if (error) return { ok: false as const, error: error.message };
       return { ok: true as const, id: data.id };
@@ -85,6 +104,7 @@ export const adminSaveTask = createServerFn({ method: "POST" })
       .single();
     if (error) return { ok: false as const, error: error.message };
     return { ok: true as const, id: created.id };
+
   });
 
 export const adminSetStatus = createServerFn({ method: "POST" })

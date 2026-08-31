@@ -102,6 +102,9 @@ type FormState = {
   endAt: string;
 };
 
+const TASK_FILTERS = ["All", "Active", "Paused", "Quick", "High reward"] as const;
+type TaskFilter = (typeof TASK_FILTERS)[number];
+
 const EMPTY_FORM: FormState = {
   title: "",
   youtubeUrl: "",
@@ -129,6 +132,16 @@ function AdminConsole() {
 
   const [form, setForm] = useState<FormState | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [taskFilter, setTaskFilter] = useState<TaskFilter>("All");
+
+  const visibleTasks = ((tasks.data ?? []) as TaskRow[]).filter((t) => {
+    if (taskFilter === "Active") return t.status === "active";
+    if (taskFilter === "Paused") return t.status === "paused";
+    if (taskFilter === "Quick") return t.duration_seconds <= 60;
+    if (taskFilter === "High reward") return Number(t.reward_coins ?? 0) >= 5000;
+    return true;
+  });
+
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: ["admin"] });
 
@@ -405,22 +418,44 @@ function AdminConsole() {
             <Plus className="size-4" /> Add task
           </button>
 
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+            {TASK_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setTaskFilter(f)}
+                className={cn(
+                  "press shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold",
+                  taskFilter === f
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-surface-2/70 text-muted-foreground",
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
           {tasks.isPending ? (
             <div className="space-y-3">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-28 rounded-3xl" />
               ))}
             </div>
-          ) : (tasks.data ?? []).length === 0 ? (
+          ) : visibleTasks.length === 0 ? (
             <div className="rounded-3xl p-6 text-center surface-card">
-              <p className="text-sm font-semibold">No tasks yet</p>
+              <p className="text-sm font-semibold">
+                {(tasks.data ?? []).length === 0 ? "No tasks yet" : "No tasks in this filter"}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Create your first task to start rewarding users.
+                {(tasks.data ?? []).length === 0
+                  ? "Create your first task to start rewarding users."
+                  : "Try a different filter to see more tasks."}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {(tasks.data as TaskRow[]).map((t) => (
+              {visibleTasks.map((t) => (
+
                 <div key={t.id} className="rounded-3xl p-3 surface-card">
                   <div className="flex gap-3">
                     <img
@@ -542,6 +577,13 @@ function AdminConsole() {
                   className="h-11 rounded-xl bg-surface-2/60"
                 />
               </Field>
+              {form.id && (
+                <p className="rounded-xl bg-surface-2/60 px-3 py-2 text-[11px] font-medium text-muted-foreground">
+                  Changing the video creates a brand new task and archives this one, so past
+                  completions stay attached to the old video.
+                </p>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Reward (₹)">
                   <Input
