@@ -20,6 +20,65 @@ export type FeedTask = {
 export function TaskCard({ task, index = 0 }: { task: FeedTask; index?: number }) {
   const progress = Math.min(100, Math.round((task.completedCount / task.completionLimit) * 100));
 
+  const body = (
+    <div className="flex gap-3">
+      <div className="relative size-[76px] shrink-0 overflow-hidden rounded-2xl bg-surface-2">
+        <img
+          src={thumbnailFor(task.youtubeId)}
+          alt=""
+          loading="lazy"
+          className="size-full object-cover"
+        />
+        <span className="absolute inset-0 flex items-center justify-center bg-black/25">
+          {task.completedByMe ? (
+            <CheckCircle2 className="size-6 text-success" />
+          ) : (
+            <Play className="size-6 fill-white text-white" />
+          )}
+        </span>
+      </div>
+
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-semibold leading-snug">{task.title}</p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {task.completedByMe ? (
+            <span className="rounded-full bg-success/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-success">
+              Completed
+            </span>
+          ) : (
+            <CoinPill amount={task.rewardCoins} prefix="+" />
+          )}
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+            <Clock className="size-3.5" />
+            {formatDuration(task.durationSeconds)}
+          </span>
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
+            <Users className="size-3.5" />
+            {task.remaining} left
+          </span>
+        </div>
+        <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
+          <div
+            className="h-full rounded-full brand-gradient transition-[width] duration-500"
+            style={{ width: `${Math.max(4, progress)}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  // Completed tasks stay listed for transparency, but can never be earned twice.
+  if (task.completedByMe) {
+    return (
+      <div
+        className="animate-rise block rounded-3xl p-3 opacity-65 surface-card"
+        style={{ animationDelay: `${Math.min(index, 6) * 55}ms` }}
+      >
+        {body}
+      </div>
+    );
+  }
+
   return (
     <Link
       to="/task/$taskId"
@@ -27,47 +86,11 @@ export function TaskCard({ task, index = 0 }: { task: FeedTask; index?: number }
       className="animate-rise press block rounded-3xl p-3 surface-card"
       style={{ animationDelay: `${Math.min(index, 6) * 55}ms` }}
     >
-      <div className="flex gap-3">
-        <div className="relative size-[76px] shrink-0 overflow-hidden rounded-2xl bg-surface-2">
-          <img
-            src={thumbnailFor(task.youtubeId)}
-            alt=""
-            loading="lazy"
-            className="size-full object-cover"
-          />
-          <span className="absolute inset-0 flex items-center justify-center bg-black/25">
-            {task.completedByMe ? (
-              <CheckCircle2 className="size-6 text-success" />
-            ) : (
-              <Play className="size-6 fill-white text-white" />
-            )}
-          </span>
-        </div>
-
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-sm font-semibold leading-snug">{task.title}</p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <CoinPill amount={task.rewardCoins} prefix="+" />
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-              <Clock className="size-3.5" />
-              {formatDuration(task.durationSeconds)}
-            </span>
-            <span className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground">
-              <Users className="size-3.5" />
-              {task.remaining} left
-            </span>
-          </div>
-          <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-surface-2">
-            <div
-              className="h-full rounded-full brand-gradient transition-[width] duration-500"
-              style={{ width: `${Math.max(4, progress)}%` }}
-            />
-          </div>
-        </div>
-      </div>
+      {body}
     </Link>
   );
 }
+
 
 export function TaskCardSkeleton() {
   return (
