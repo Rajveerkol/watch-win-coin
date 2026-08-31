@@ -145,6 +145,8 @@ export type Database = {
           duration_seconds: number
           end_at: string | null
           id: string
+          is_high_reward: boolean
+          is_quick: boolean
           priority: number
           reward_coins: number | null
           reward_rupees: number
@@ -161,6 +163,8 @@ export type Database = {
           duration_seconds?: number
           end_at?: string | null
           id?: string
+          is_high_reward?: boolean
+          is_quick?: boolean
           priority?: number
           reward_coins?: number | null
           reward_rupees: number
@@ -177,6 +181,8 @@ export type Database = {
           duration_seconds?: number
           end_at?: string | null
           id?: string
+          is_high_reward?: boolean
+          is_quick?: boolean
           priority?: number
           reward_coins?: number | null
           reward_rupees?: number
