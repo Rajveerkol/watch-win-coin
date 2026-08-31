@@ -663,9 +663,8 @@ function AdminConsole() {
                   ))}
                 </div>
                 <p className="mt-1 text-[11px] text-muted-foreground">
-                  On karne par ye task user side ke "{form.isQuick ? "Quick" : ""}
-                  {form.isQuick && form.isHighReward ? " / " : ""}
-                  {form.isHighReward ? "High reward" : ""}" filter mein dikhega.
+                  On karne par ye task user side ke usi naam ke filter (Quick / High reward) mein
+                  dikhega.
                 </p>
               </Field>
               <Field label="Status">
