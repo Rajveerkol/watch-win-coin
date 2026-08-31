@@ -577,6 +577,13 @@ function AdminConsole() {
                   className="h-11 rounded-xl bg-surface-2/60"
                 />
               </Field>
+              {form.id && (
+                <p className="rounded-xl bg-surface-2/60 px-3 py-2 text-[11px] font-medium text-muted-foreground">
+                  Changing the video creates a brand new task and archives this one, so past
+                  completions stay attached to the old video.
+                </p>
+              )}
+
               <div className="grid grid-cols-2 gap-3">
                 <Field label="Reward (₹)">
                   <Input
