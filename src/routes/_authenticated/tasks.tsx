@@ -32,12 +32,16 @@ function TasksScreen() {
   const { data, isPending, isError, refetch } = useFeed();
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("All");
 
-  const all = (data?.tasks ?? []).filter((t) => !t.completedByMe);
-  const tasks = all.filter((t) => {
-    if (filter === "Quick") return t.durationSeconds <= 60;
-    if (filter === "High reward") return t.rewardCoins >= 5000;
-    return true;
-  });
+  const everything = data?.tasks ?? [];
+  const all = everything.filter((t) => !t.completedByMe);
+  const tasks = everything
+    .filter((t) => {
+      if (filter === "Quick") return t.durationSeconds <= 60;
+      if (filter === "High reward") return t.rewardCoins >= 5000;
+      return true;
+    })
+    // Already-earned tasks stay visible (marked completed) but sit at the bottom.
+    .sort((a, b) => Number(a.completedByMe) - Number(b.completedByMe));
 
   return (
     <AppShell>
@@ -47,6 +51,7 @@ function TasksScreen() {
           isPending ? "Loading live tasks…" : `${all.length} task${all.length === 1 ? "" : "s"} live now`
         }
       />
+
 
       <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {FILTERS.map((f) => (
