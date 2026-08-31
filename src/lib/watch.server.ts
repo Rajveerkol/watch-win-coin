@@ -82,6 +82,8 @@ export type PublicTask = {
   completedCount: number;
   remaining: number;
   completedByMe: boolean;
+  isQuick: boolean;
+  isHighReward: boolean;
 };
 
 export async function listLiveTasks(walletId: string): Promise<PublicTask[]> {
@@ -90,7 +92,7 @@ export async function listLiveTasks(walletId: string): Promise<PublicTask[]> {
     supabaseAdmin
       .from("tasks")
       .select(
-        "id, title, youtube_id, reward_coins, duration_seconds, completion_limit, completed_count, start_at, end_at",
+        "id, title, youtube_id, reward_coins, duration_seconds, completion_limit, completed_count, start_at, end_at, is_quick, is_high_reward",
       )
       .eq("status", "active")
       .or(`start_at.is.null,start_at.lte.${nowIso}`)
@@ -114,6 +116,8 @@ export async function listLiveTasks(walletId: string): Promise<PublicTask[]> {
       completedCount: t.completed_count,
       remaining: Math.max(0, t.completion_limit - t.completed_count),
       completedByMe: done.has(t.id),
+      isQuick: t.is_quick,
+      isHighReward: t.is_high_reward,
     }));
 }
 
