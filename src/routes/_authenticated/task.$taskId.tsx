@@ -451,7 +451,13 @@ function TaskScreen() {
               </p>
             )}
 
+            <p className="mt-3 flex items-start gap-2 rounded-xl bg-destructive/12 px-3 py-2 text-[11px] font-semibold text-destructive">
+              <CircleAlert className="mt-0.5 size-3.5 shrink-0" />
+              Don't refresh or close this page — your watched time will reset to 0 and the task
+              starts again from the beginning.
+            </p>
           </section>
+
 
           {checkpointLeft > 0 && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-6">
