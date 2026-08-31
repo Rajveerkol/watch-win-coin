@@ -405,22 +405,44 @@ function AdminConsole() {
             <Plus className="size-4" /> Add task
           </button>
 
+          <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
+            {TASK_FILTERS.map((f) => (
+              <button
+                key={f}
+                onClick={() => setTaskFilter(f)}
+                className={cn(
+                  "press shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold",
+                  taskFilter === f
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-surface-2/70 text-muted-foreground",
+                )}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+
           {tasks.isPending ? (
             <div className="space-y-3">
               {[0, 1, 2].map((i) => (
                 <Skeleton key={i} className="h-28 rounded-3xl" />
               ))}
             </div>
-          ) : (tasks.data ?? []).length === 0 ? (
+          ) : visibleTasks.length === 0 ? (
             <div className="rounded-3xl p-6 text-center surface-card">
-              <p className="text-sm font-semibold">No tasks yet</p>
+              <p className="text-sm font-semibold">
+                {(tasks.data ?? []).length === 0 ? "No tasks yet" : "No tasks in this filter"}
+              </p>
               <p className="mt-1 text-xs text-muted-foreground">
-                Create your first task to start rewarding users.
+                {(tasks.data ?? []).length === 0
+                  ? "Create your first task to start rewarding users."
+                  : "Try a different filter to see more tasks."}
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {(tasks.data as TaskRow[]).map((t) => (
+              {visibleTasks.map((t) => (
+
                 <div key={t.id} className="rounded-3xl p-3 surface-card">
                   <div className="flex gap-3">
                     <img
