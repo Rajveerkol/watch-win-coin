@@ -36,8 +36,8 @@ function TasksScreen() {
   const all = everything.filter((t) => !t.completedByMe);
   const tasks = everything
     .filter((t) => {
-      if (filter === "Quick") return t.durationSeconds <= 60;
-      if (filter === "High reward") return t.rewardCoins >= 5000;
+      if (filter === "Quick") return t.isQuick;
+      if (filter === "High reward") return t.isHighReward;
       return true;
     })
     // Already-earned tasks stay visible (marked completed) but sit at the bottom.

@@ -13,6 +13,8 @@ const taskPayload = z.object({
   completionLimit: z.number().int().min(1).max(1000000),
   status: z.enum(["draft", "active", "paused", "completed", "expired"]),
   priority: z.number().int().min(0).max(9999),
+  isQuick: z.boolean().default(false),
+  isHighReward: z.boolean().default(false),
   startAt: z.string().nullable(),
   endAt: z.string().nullable(),
 });
@@ -70,6 +72,8 @@ export const adminSaveTask = createServerFn({ method: "POST" })
       completion_limit: data.completionLimit,
       status: data.status,
       priority: data.priority,
+      is_quick: data.isQuick,
+      is_high_reward: data.isHighReward,
       start_at: data.startAt,
       end_at: data.endAt,
     };

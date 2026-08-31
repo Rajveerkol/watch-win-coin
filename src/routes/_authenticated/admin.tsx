@@ -84,6 +84,8 @@ type TaskRow = {
   completed_count: number;
   status: string;
   priority: number;
+  is_quick: boolean;
+  is_high_reward: boolean;
   start_at: string | null;
   end_at: string | null;
   created_at: string;
@@ -98,6 +100,8 @@ type FormState = {
   completionLimit: string;
   status: "draft" | "active" | "paused" | "completed" | "expired";
   priority: string;
+  isQuick: boolean;
+  isHighReward: boolean;
   startAt: string;
   endAt: string;
 };
@@ -113,6 +117,8 @@ const EMPTY_FORM: FormState = {
   completionLimit: "100",
   status: "active",
   priority: "0",
+  isQuick: false,
+  isHighReward: false,
   startAt: "",
   endAt: "",
 };
@@ -137,8 +143,8 @@ function AdminConsole() {
   const visibleTasks = ((tasks.data ?? []) as TaskRow[]).filter((t) => {
     if (taskFilter === "Active") return t.status === "active";
     if (taskFilter === "Paused") return t.status === "paused";
-    if (taskFilter === "Quick") return t.duration_seconds <= 60;
-    if (taskFilter === "High reward") return Number(t.reward_coins ?? 0) >= 5000;
+    if (taskFilter === "Quick") return t.is_quick;
+    if (taskFilter === "High reward") return t.is_high_reward;
     return true;
   });
 
@@ -165,6 +171,8 @@ function AdminConsole() {
           completionLimit,
           status: state.status,
           priority: Number(state.priority) || 0,
+          isQuick: state.isQuick,
+          isHighReward: state.isHighReward,
           startAt: state.startAt ? new Date(state.startAt).toISOString() : null,
           endAt: state.endAt ? new Date(state.endAt).toISOString() : null,
         },
@@ -517,6 +525,8 @@ function AdminConsole() {
                           completionLimit: String(t.completion_limit),
                           status: t.status as FormState["status"],
                           priority: String(t.priority),
+                          isQuick: t.is_quick,
+                          isHighReward: t.is_high_reward,
                           startAt: t.start_at ? t.start_at.slice(0, 16) : "",
                           endAt: t.end_at ? t.end_at.slice(0, 16) : "",
                         });
@@ -629,6 +639,35 @@ function AdminConsole() {
                   />
                 </Field>
               </div>
+              <Field label="Show in filters">
+                <div className="flex flex-wrap gap-2">
+                  {(
+                    [
+                      { key: "isQuick" as const, label: "Quick" },
+                      { key: "isHighReward" as const, label: "High reward" },
+                    ]
+                  ).map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setForm({ ...form, [key]: !form[key] })}
+                      className={cn(
+                        "press rounded-full px-3 py-1.5 text-[11px] font-semibold",
+                        form[key]
+                          ? "bg-coin text-coin-foreground"
+                          : "bg-surface-2/70 text-muted-foreground",
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">
+                  On karne par ye task user side ke "{form.isQuick ? "Quick" : ""}
+                  {form.isQuick && form.isHighReward ? " / " : ""}
+                  {form.isHighReward ? "High reward" : ""}" filter mein dikhega.
+                </p>
+              </Field>
               <Field label="Status">
                 <div className="flex flex-wrap gap-2">
                   {(["draft", "active", "paused", "completed", "expired"] as const).map((s) => (
